@@ -18,7 +18,7 @@ init([Port]) ->
 	% start the clients supervisor
 	{ok, ClientsSupervisor}  = srv_stub_clnt_sup:start_link([]),
 
-	% 
+	% start off the first listeners
 	spawn_link(fun start_listeners/0),
 	% and return the supervision strategy
 	{ok, {{simple_one_for_one, 60, 3600},

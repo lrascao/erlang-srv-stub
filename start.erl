@@ -1,14 +1,14 @@
 %% -*- erlang -*-
-%%! -pa ./srv-stub-1.0.0/ebin
+%%! -pa ebin deps/protobuffs/ebin
 
 main([Arg]) ->
   Port = list_to_integer(Arg),
-  ok = server:start(Port),
+  {ok, _} = srv_stub_sup:start_link(Port),
   io:format("listening on port ~p~n", [Port]),
   ok = timer:sleep(1000 * 60 * 60);  %% sleep a lot of time
 main([]) ->
   usage().
-  
+
 usage() ->
   io:format("usage: start [port]~n"),
   halt(1).

@@ -2,7 +2,7 @@
   [ { description, "TCP server stub for handling protobuf rpc's" },
     { vsn, git },
     { registered, [] },
-    { applications, [kernel,stdlib] },
+    { applications, [kernel,stdlib, protobuffs] },
     { env, [] }
   ]
 }.

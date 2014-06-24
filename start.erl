@@ -1,3 +1,4 @@
+#!/usr/bin/env escript
 %% -*- erlang -*-
 %%! -pa ebin deps/protobuffs/ebin
 

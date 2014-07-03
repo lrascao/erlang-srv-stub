@@ -50,7 +50,7 @@ handle_cast(accept, State = #state{socket = ListenSocket, clients = Clients}) ->
 	
 	% add the client to the list
 	NewClients = [Clients | NewClient],
-	% send an async accept message to keep this worker accepting connections
+	% send an async accept message to ourselves in order to keep this worker accepting connections
 	gen_server:cast(self(), accept),
 	% return the new state containing the newly accepted client
 	{noreply, State#state{clients = NewClients}};

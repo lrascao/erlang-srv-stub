@@ -1,6 +1,9 @@
 -module(srv_stub_framing).
 
--export([decode_header/1, decode_protobuf_payload/1]).
+-export([decode_header/1, decode_protobuf_request/1, encode_protobuf_reply/3]).
+
+strip(Input) -> 
+  [ X || <<X>> <= Input, X /= 0].
 
 decode_header(Data) ->
   % Header consists of 
@@ -11,7 +14,12 @@ decode_header(Data) ->
   <<Payload:PayloadSize/bytes>> = Rest,
   {ok, Protocol, Payload}.
 
-decode_protobuf_payload(Payload) ->
+encode_header(PayloadSize) ->
+  Protocol = 6006,
+  Header = <<Protocol:32, PayloadSize:32>>,
+  {ok, Header}.
+  
+decode_protobuf_request(Payload) ->
   % decode the xr marker
   <<"mmv", MessageInfo/binary>> = Payload,
   % message info consists of:
@@ -24,4 +32,10 @@ decode_protobuf_payload(Payload) ->
   %   64 bytes: proc name
   %   4 bytes: proc id
   <<ModuleName:64/bytes, ProcName:64/bytes, ProcId:32, Data/binary>> = ProcInfo,
-  {ok, MessageId, IsReply, Flags, ModuleName, ProcName, ProcId, Data}.
+  {ok, MessageId, IsReply, Flags, strip(ModuleName), strip(ProcName), ProcId, Data}.
+
+encode_protobuf_reply(MessageId, Flags, OutputData) ->
+  % get a valid header
+  {ok, Header} = encode_header(size(OutputData)),
+  Payload = <<Header/binary, MessageId:32, Flags:32, OutputData/binary>>,
+  {ok, Payload}.

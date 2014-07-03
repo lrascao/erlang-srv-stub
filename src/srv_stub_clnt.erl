@@ -29,10 +29,12 @@ handle_call(_Request, _From, State) ->
 	{noreply, State}.
 
 handle_cast({new_request, Request}, State) ->
-  io:format("Socket: ~p~n", [Request#request.socket]),
-  io:format("ModuleName: ~s~n", [Request#request.module_name]),
-  io:format("ProcName: ~s~n", [Request#request.proc_name]),
-  io:format("Data: ~p~n", [Request#request.data]),
+  % take care of the protobuf request
+  {ok, OutputData} = srv_stub_clnt_protobuf:handle_request(Request),
+  % now frame the reply to be sent
+  {ok, Reply} = srv_stub_framing:encode_protobuf_reply(Request#request.message_id, Request#request.flags, OutputData),
+  % now write the reply to the socket client
+  ok = gen_tcp:send(Request#request.socket, Reply),
 	{noreply, State};
 handle_cast(_, State) ->
   {noreply, State}.
@@ -42,15 +44,15 @@ handle_info({tcp, Socket, RawData}, State = #state{socket = Socket}) ->
   {ok, 6006, Payload} = srv_stub_framing:decode_header(list_to_binary(RawData)),
   % now in the possession of the payload decode it also
   % extract all the relevant information
-  {ok, MessageId, IsReply, Flags, ModuleName, ProcName, ProcId, Data} = srv_stub_framing:decode_protobuf_payload(Payload),
+  {ok, MessageId, IsReply, Flags, ModuleName, ProcName, ProcId, Data} = srv_stub_framing:decode_protobuf_request(Payload),
   % do a async message to self
   gen_server:cast(self(), {new_request, #request{
                                             socket = Socket,
                                             message_id = MessageId,
                                             is_reply = IsReply,
                                             flags = Flags,
-                                            module_name = binary_to_list(ModuleName),
-                                            proc_name = binary_to_list(ProcName),
+                                            module_name = ModuleName,
+                                            proc_name = ProcName,
                                             proc_id = ProcId,
                                             data = Data}}),
 	{noreply, State};

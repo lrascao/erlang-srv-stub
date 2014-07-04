@@ -1,4 +1,4 @@
-REBAR=/bin/env rebar
+REBAR=`which rebar || printf ./rebar`
 REPO=erlang-srv-stub
 all: get-deps compile
 

@@ -41,7 +41,9 @@ handle_cast(_, State) ->
 
 handle_info({tcp, Socket, RawData}, State = #state{socket = Socket}) ->
 	% decode the header, only protobuf is accepted
-  {ok, 6006, Payload} = srv_stub_framing:decode_header(list_to_binary(RawData)),
+  {ok, 6006, PayloadSize, Rest} = srv_stub_framing:decode_header(list_to_binary(RawData)),
+  % obtain the payload
+  <<Payload:PayloadSize/bytes>> = Rest,
   % now in the possession of the payload decode it also
   % extract all the relevant information
   {ok, MessageId, IsReply, Flags, ModuleName, ProcName, ProcId, Data} = srv_stub_framing:decode_protobuf_request(Payload),

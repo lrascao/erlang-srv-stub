@@ -4,9 +4,11 @@
          encode_protobuf_request/5, decode_protobuf_request/1, 
          encode_protobuf_reply/3, decode_protobuf_reply/1]).
 
+% remove all zero values from end of binary
 strip(Input) -> 
   [ X || <<X>> <= Input, X /= 0].
 
+% pad end of binary with Size occurrences of supplied value
 pad(Input, Size, Padding) ->
   <<Input/binary, Padding:((Size - size(Input)) * 8)>>.
 
@@ -38,8 +40,8 @@ encode_protobuf_request(MessageId, Flags, ModuleName, ProcName, Data) ->
   % encode the xr marker
   Payload = <<"mmv", MessageInfo/binary>>,
   {ok, Header} = encode_header(size(Payload)),
-  Request = <<Header/binary, Payload/binary>>,
-  {ok, Request}.
+	% final result is header and payload contactenated
+  {ok, <<Header/binary, Payload/binary>>}.
 
   % xr marker consists of
 	%		3 bytes: 'm','m','v'

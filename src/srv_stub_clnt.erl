@@ -41,14 +41,16 @@ handle_cast(_, State) ->
 
 handle_info({tcp, Socket, RawData}, State = #state{socket = Socket}) ->
 	% decode the header, only protobuf is accepted
-  {ok, 6006, PayloadSize, Rest} = srv_stub_framing:decode_header(list_to_binary(RawData)),
-  % obtain the payload
-  <<Payload:PayloadSize/bytes>> = Rest,
-  % now in the possession of the payload decode it also
-  % extract all the relevant information
-  {ok, MessageId, IsReply, Flags, ModuleName, ProcName, ProcId, Data} = srv_stub_framing:decode_protobuf_request(Payload),
-  % do a async message to self
-  gen_server:cast(self(), {new_request, #request{
+	case srv_stub_framing:decode_header(list_to_binary(RawData)) of
+  	{ok, 6006, PayloadSize, Rest} ->
+			% obtain the payload
+  		<<Payload:PayloadSize/bytes>> = Rest,
+  		% now in the possession of the payload decode it also
+  		% extract all the relevant information
+			case srv_stub_framing:decode_protobuf_request(Payload) of
+  			{ok, MessageId, IsReply, Flags, ModuleName, ProcName, ProcId, Data} ->
+  				% do a async message to self
+  				gen_server:cast(self(), {new_request, #request{
                                             socket = Socket,
                                             message_id = MessageId,
                                             is_reply = IsReply,
@@ -57,7 +59,13 @@ handle_info({tcp, Socket, RawData}, State = #state{socket = Socket}) ->
                                             proc_name = ProcName,
                                             proc_id = ProcId,
                                             data = Data}}),
-	{noreply, State};
+					{noreply, State}
+			end;
+		{error} ->
+			% close the connection and end the process handling this client
+			gen_tcp:close(Socket),
+			{stop, invalid_header, State}
+	end;
 handle_info({tcp_closed, Socket}, State = #state{socket = Socket}) ->
 	io:format("client dropped on socket ~p~n", [Socket]),
 	{stop, normal, State}.

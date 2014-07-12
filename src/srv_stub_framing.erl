@@ -10,18 +10,18 @@ strip(Input) ->
 pad(Input, Size, Padding) ->
   <<Input/binary, Padding:((Size - size(Input)) * 8)>>.
 
-decode_header(Data) ->
-  % Header consists of 
-  %     4 bytes - Protocol id
-  %     4 bytes - payload size
-  <<Protocol:32, PayloadSize:32, Rest/binary>> = Data,
-  {ok, Protocol, PayloadSize, Rest}.
+% Header consists of 
+%     4 bytes - Protocol id
+%     4 bytes - payload size
+decode_header(<<Protocol:32, PayloadSize:32, Rest/binary>>) ->
+  {ok, Protocol, PayloadSize, Rest};
+decode_header(<<_InvalidHeader/binary>>) ->
+	{error}.
 
 encode_header(PayloadSize) ->
-  Protocol = 6006,
-  Header = <<Protocol:32, PayloadSize:32>>,
+  Header = <<6006:32, PayloadSize:32>>,
   {ok, Header}.
-  
+ 
 encode_protobuf_request(MessageId, Flags, ModuleName, ProcName, Data) ->
   % proc info consists of:
   %   64 bytes: module name
@@ -41,20 +41,20 @@ encode_protobuf_request(MessageId, Flags, ModuleName, ProcName, Data) ->
   Request = <<Header/binary, Payload/binary>>,
   {ok, Request}.
 
-decode_protobuf_request(Payload) ->
-  % decode the xr marker
-  <<"mmv", MessageInfo/binary>> = Payload,
+  % xr marker consists of
+	%		3 bytes: 'm','m','v'
   % message info consists of:
   %   4 bytes: message id
   %   4 bytes: is reply or not
   %   4 bytes: flags
-  <<MessageId:32, IsReply:32, Flags:32, ProcInfo/binary>> = MessageInfo,
   % proc info consists of:
   %   64 bytes: module name
   %   64 bytes: proc name
   %   4 bytes: proc id
-  <<ModuleName:64/bytes, ProcName:64/bytes, ProcId:32, Data/binary>> = ProcInfo,
-  {ok, MessageId, IsReply, Flags, strip(ModuleName), strip(ProcName), ProcId, Data}.
+decode_protobuf_request(<<"mmv", MessageId:32, IsReply:32, Flags:32, ModuleName:64/bytes, ProcName:64/bytes, ProcId:32, Data/binary>>) ->
+  {ok, MessageId, IsReply, Flags, strip(ModuleName), strip(ProcName), ProcId, Data};
+decode_protobuf_request(<<_InvalidRequest/binary>>) ->
+	{error}.
 
 encode_protobuf_reply(MessageId, Flags, OutputData) ->
   % get a valid header

@@ -1,0 +1,16 @@
+package builtin;
+
+service builtin
+{
+	rpc builtinPing(PING_IN) returns (PING_OUT);
+}
+
+message PING_IN
+{
+	optional string str = 1;
+}
+
+message PING_OUT
+{
+	optional string str = 1;
+}

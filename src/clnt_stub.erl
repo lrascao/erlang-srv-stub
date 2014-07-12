@@ -30,14 +30,14 @@ call(Module, Proc, Input, Sock) ->
   % get the header, which is two integers (4 bytes each)
   {ok, Header} = gen_tcp:recv(Sock, 8),
   % decode it, then read the rest
-  {ok, 6006, PayloadSize, Rest} = srv_stub_framing:decode_header(Header),
+  {ok, PayloadSize, _Rest} = srv_stub_framing:decode_header(Header),
 
   % we are to ready the actual payload data plus another two integers (4 bytes each)
   % they are the message id and flags
   {ok, Payload} = gen_tcp:recv(Sock, PayloadSize + 8),
   
   % extract all the relevant information
-  {ok, MessageId, Flags, OutputData} = srv_stub_framing:decode_protobuf_reply(Payload),
+  {ok, _MessageId, _Flags, OutputData} = srv_stub_framing:decode_protobuf_reply(Payload),
   
   % decode the output
   Output = ProtobufModule:DecodeOutputMethod(OutputData),

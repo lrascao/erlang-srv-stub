@@ -12,14 +12,15 @@ strip(Input) ->
 pad(Input, Size, Padding) ->
   <<Input/binary, Padding:((Size - size(Input)) * 8)>>.
 
-% Header consists of 
+% header consists of 
 %     4 bytes - Protocol id
 %     4 bytes - payload size
-decode_header(<<Protocol:32, PayloadSize:32, Rest/binary>>) ->
-  {ok, Protocol, PayloadSize, Rest};
+decode_header(<<6006:32, PayloadSize:32, Rest/binary>>) ->
+  {ok, PayloadSize, Rest};
 decode_header(<<_InvalidHeader/binary>>) ->
 	{error}.
 
+% 
 encode_header(PayloadSize) ->
   Header = <<6006:32, PayloadSize:32>>,
   {ok, Header}.
@@ -43,27 +44,28 @@ encode_protobuf_request(MessageId, Flags, ModuleName, ProcName, Data) ->
 	% final result is header and payload contactenated
   {ok, <<Header/binary, Payload/binary>>}.
 
-  % xr marker consists of
-	%		3 bytes: 'm','m','v'
-  % message info consists of:
-  %   4 bytes: message id
-  %   4 bytes: is reply or not
-  %   4 bytes: flags
-  % proc info consists of:
-  %   64 bytes: module name
-  %   64 bytes: proc name
-  %   4 bytes: proc id
+% xr marker consists of
+%		3 bytes: 'm','m','v'
+% message info consists of:
+%   4 bytes: message id
+%   4 bytes: is reply or not
+%   4 bytes: flags
+% proc info consists of:
+%   64 bytes: module name
+%   64 bytes: proc name
+%   4 bytes: proc id
 decode_protobuf_request(<<"mmv", MessageId:32, IsReply:32, Flags:32, ModuleName:64/bytes, ProcName:64/bytes, ProcId:32, Data/binary>>) ->
   {ok, MessageId, IsReply, Flags, strip(ModuleName), strip(ProcName), ProcId, Data};
 decode_protobuf_request(<<_InvalidRequest/binary>>) ->
 	{error}.
 
-encode_protobuf_reply(MessageId, Flags, OutputData) ->
-  % get a valid header
-  {ok, Header} = encode_header(size(OutputData)),
-  Payload = <<Header/binary, MessageId:32, Flags:32, OutputData/binary>>,
-  {ok, Payload}.
+encode_protobuf_reply(MessageId, Flags, Data) ->
+  % get a valid header containing the data size
+  {ok, Header} = encode_header(size(Data)),
+	% build a reply containing the header, message id, flags and the data
+  {ok, <<Header/binary, MessageId:32, Flags:32, Data/binary>>}.
 
-decode_protobuf_reply(Payload) ->
-  <<MessageId:32, Flags:32, Data/binary>> = Payload,
-  {ok, MessageId, Flags, Data}.
+decode_protobuf_reply(<<MessageId:32, Flags:32, Data/binary>>) ->
+  {ok, MessageId, Flags, Data};
+decode_protobuf_reply(<<_InvalidaReply/binary>>) ->
+	{error}.

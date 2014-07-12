@@ -42,7 +42,7 @@ handle_cast(_, State) ->
 handle_info({tcp, Socket, RawData}, State = #state{socket = Socket}) ->
 	% decode the header, only protobuf is accepted
 	case srv_stub_framing:decode_header(list_to_binary(RawData)) of
-  	{ok, 6006, PayloadSize, Rest} ->
+  	{ok, PayloadSize, Rest} ->
 			% obtain the payload
   		<<Payload:PayloadSize/bytes>> = Rest,
   		% now in the possession of the payload decode it also

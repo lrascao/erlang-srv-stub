@@ -1,6 +1,6 @@
 #!/usr/bin/env escript
 %% -*- erlang -*-
-%%! -pa ebin deps/protobuffs/ebin
+%%! -pa ebin deps/gpb/ebin
 
 main([Arg]) ->
   Port = list_to_integer(Arg),

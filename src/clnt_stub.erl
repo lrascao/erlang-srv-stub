@@ -8,23 +8,21 @@
 
 -module(clnt_stub).
 
+-include("gpb.hrl").
+
 -export([call/4]).
 
 call(Module, Proc, Input, Sock) ->
 
-  % now build the protobuf module name
+  % now build the protobuf module name, it is suffixed with _pb
   ProtobufModule = list_to_atom(atom_to_list(Module)++"_pb"),
   % now, given the proc name we get it's input and output arguments
-  RpcInfo = list_to_atom(atom_to_list(Proc)++"_info"),
-  {RpcInputMessage, RpcOutputMessage} = ProtobufModule:RpcInfo(),
-  % get the encode and decode input/output arguments
-  EncodeInputMethod = list_to_atom("encode_"++atom_to_list(RpcInputMessage)),
-  DecodeOutputMethod = list_to_atom("decode_"++atom_to_list(RpcOutputMessage)),
+  RpcDef = ProtobufModule:fetch_rpc_def(Proc),
 
   % encode the input
-  InputData = ProtobufModule:EncodeInputMethod(Input),
+  InputData = ProtobufModule:encode_msg(Input),
 
-  {ok, Request} = srv_stub_framing:encode_protobuf_request(1, 0, atom_to_list(Module), atom_to_list(Proc), list_to_binary(InputData)),
+  {ok, Request} = srv_stub_framing:encode_protobuf_request(1, 0, atom_to_list(Module), atom_to_list(Proc), InputData),
 
   gen_tcp:send(Sock, Request),
   % get the header, which is two integers (4 bytes each)
@@ -40,5 +38,5 @@ call(Module, Proc, Input, Sock) ->
   {ok, _MessageId, _Flags, OutputData} = srv_stub_framing:decode_protobuf_reply(Payload),
   
   % decode the output
-  Output = ProtobufModule:DecodeOutputMethod(OutputData),
+  Output = ProtobufModule:decode_msg(OutputData, RpcDef#rpc.output),
   {ok, Output}.

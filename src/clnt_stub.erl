@@ -17,7 +17,7 @@ call(Module, Proc, Input, Sock) ->
   % now build the protobuf module name, it is suffixed with _pb
   ProtobufModule = list_to_atom(atom_to_list(Module)++"_pb"),
   % now, given the proc name we get it's input and output arguments
-  RpcDef = ProtobufModule:fetch_rpc_def(Proc),
+  RpcDef = ProtobufModule:fetch_rpc_def(Module, Proc),
 
   % encode the input
   InputData = ProtobufModule:encode_msg(Input),

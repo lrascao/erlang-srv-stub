@@ -13,7 +13,7 @@ handle_request(Request) ->
   % now, given the proc name we get it's input and output arguments
   RpcName = list_to_atom(Request#request.proc_name),
   
-  RpcDef = ProtobufModule:fetch_rpc_def(RpcName),
+  RpcDef = ProtobufModule:fetch_rpc_def(Module, RpcName),
   %~ io:format("~s ~s:~s(~s)~n", [RpcDef#rpc.output, Module, RpcDef#rpc.name, RpcDef#rpc.input]),
   % decode the input arguments
   DecodedInput = ProtobufModule:decode_msg(Request#request.data, RpcDef#rpc.input),  

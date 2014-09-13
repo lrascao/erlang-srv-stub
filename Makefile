@@ -1,5 +1,5 @@
 REBAR=`which rebar || printf ./rebar`
-REPO=erlang-srv-stub
+
 all: get-deps compile
 
 get-deps:
@@ -7,6 +7,11 @@ get-deps:
 
 compile:
 	@$(REBAR) compile
+
+FORCE:
+
+test: FORCE
+	@$(REBAR) compile eunit
 
 clean:
 	@$(REBAR) clean

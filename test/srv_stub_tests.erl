@@ -5,7 +5,7 @@
 -include("../include/builtin_pb.hrl").
 
 srv_stub_ping_test() ->
-	Port = 12345,
+	Port = 54321,
 	{ok, _} = srv_stub_sup:start_link(Port),
 	{ok, Sock} = gen_tcp:connect("localhost", Port, 
                                  [binary, {packet, 0}, {active, false}]),

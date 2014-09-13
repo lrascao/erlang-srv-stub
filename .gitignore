@@ -2,3 +2,4 @@ ebin/
 .rebar/
 src/builtin_pb.erl
 include/builtin_pb.hrl
+.eunit

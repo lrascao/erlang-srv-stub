@@ -1,4 +1,4 @@
-REBAR=`which rebar || printf ./rebar`
+REBAR=./rebar
 
 all: get-deps compile
 

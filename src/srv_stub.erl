@@ -35,19 +35,19 @@ handle_call(Request, _From, State) ->
 handle_cast(accept, State = #state{socket = ListenSocket, clients = Clients}) ->
 	% block, until a new client connects, then accept it
 	{ok, Socket} = gen_tcp:accept(ListenSocket),
-	
-	% make the socket not active so the data arrives through handle_info
+
+	% make the socket active so the data arrives through handle_info
 	ok = inet:setopts(Socket, [{active, true}]),
-	% get the only child of this supervisor, which is actually our Client
+	% start the only child of this supervisor, which is actually our Client
 	{ok, ClientPid} = srv_stub_clnt_sup:start_child(State#state.clients_supervisor, [Socket, self()]),
 
 	% create the new entry containing it's data
 	NewClient = #client{socket = Socket, pid = ClientPid},
-	
+
 	io:format("new client started on socket ~p, pid ~p~n", [NewClient#client.socket, NewClient#client.pid]),
 	% assign the newly accepted socket to the client which will be the controlling process
 	ok = gen_tcp:controlling_process(Socket, NewClient#client.pid),
-	
+
 	% add the client to the list
 	NewClients = [Clients | NewClient],
 	% send an async accept message to ourselves in order to keep this worker accepting connections
